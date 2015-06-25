@@ -29,7 +29,7 @@ opts.train.sync = false ;
 opts.train.continue = false ;
 opts.train.errorFunction = 'binary' ;
 opts.train.expDir = 'data/12net-v1.0/' ;
-opts.train.learningRate = [0.001*ones(1,50),0.0001*ones(1,20),0.00001*ones(1,5)] ;
+opts.train.learningRate = [0.001*ones(1,70),0.0001*ones(1,20),0.00001*ones(1,5)] ;
 opts.train.numEpochs = numel(opts.train.learningRate) ;
 [opts, varargin] = vl_argparse(opts.train, varargin) ;
 
