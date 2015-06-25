@@ -26,7 +26,6 @@ opts.train.continue = true ;
 opts.train.gpus = 3 ;
 %opts.train.prefetch = true ;
 opts.train.sync = false ;
-opts.train.continue = false ;
 opts.train.errorFunction = 'binary' ;
 opts.train.expDir = 'data/12net-v1.0/' ;
 opts.train.learningRate = [0.001*ones(1,70),0.0001*ones(1,20),0.00001*ones(1,5)] ;
