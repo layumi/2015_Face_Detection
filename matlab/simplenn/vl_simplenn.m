@@ -169,6 +169,13 @@ if nargin <= 3 || isempty(res)
 end
 res(1).x = x ;
 
+global net24;
+global net12;
+
+if(~isempty(net12))
+  net12 = vl_simplenn_move(net12,'gpu');
+end
+
 for i=1:n
   l = net.layers{i} ;
   res(i).time = tic ;
@@ -213,8 +220,28 @@ for i=1:n
       end
     case 'pdist'
       res(i+1) = vl_nnpdist(res(i).x, l.p, 'noRoot', l.noRoot, 'epsilon', l.epsilon) ;
-    case 'custom'
-      res(i+1) = l.forward(l, res(i), res(i+1)) ;
+ case 'custom'
+      im = imresize(x,0.5);
+      im = im - net24.imageMean + net12.imageMean;
+      res12 = vl_simplenn(net12, im) ; 
+      oo = reshape(res(i).x,128,[]);
+      nn = reshape(res12(end-2).x,16,[]);
+      newx = [oo;nn];
+      newx = reshape(newx,1,1,144,[]);
+      wl1=gpuArray(l.weights{1});
+      wl2=gpuArray(l.weights{2});
+      res(i+1).x = vl_nnconv(newx,wl1, wl2, 'pad', l.pad, 'stride', l.stride) ;
+    case 'custom48'
+      im24 = imresize(x,0.5);
+      im12 = imresize(x,0.25);
+      res24 = vl_simplenn(net24, im24) ; 
+      res12 = vl_simplenn(net12, im12);
+      oo = reshape(res(i).x,256,[]);
+      nn = reshape(res24(end-2).x,128,[]);
+      hh = reshape(res12(end-2).x,16,[]);
+      newx = [oo;nn;hh];
+      newx = reshape(newx,1,1,400,[]);
+      res(i+1).x = vl_nnconv(newx, l.weights{1}, l.weights{2}, 'pad', l.pad, 'stride', l.stride) ;
     otherwise
       error('Unknown layer type %s', l.type) ;
   end
@@ -336,7 +363,21 @@ if doder
         res(i).dzdx = vl_nnpdist(res(i).x, l.p, res(i+1).dzdx, ...
                                  'noRoot', l.noRoot, 'epsilon', l.epsilon) ;
       case 'custom'
-        res(i) = l.backward(l, res(i), res(i+1)) ;
+         wl1=gpuArray(l.weights{1});
+         wl2=gpuArray(l.weights{2});
+        [res(i).dzdx, res(i).dzdw{1}, res(i).dzdw{2}] = ...
+                vl_nnconv(newx, wl1, wl2, ...   %%newx
+                          res(i+1).dzdx, ...
+                          'pad', l.pad, 'stride', l.stride) ;
+         res(i).dzdx = res(i).dzdx(1,1,(1:128),:);
+     case 'custom48'
+         wl1=gpuArray(l.weights{1});
+         wl2=gpuArray(l.weights{2});
+        [res(i).dzdx, res(i).dzdw{1}, res(i).dzdw{2}] = ...
+                vl_nnconv(newx, wl1, wl2, ...
+                          res(i+1).dzdx, ...
+                          'pad', l.pad, 'stride', l.stride) ;
+         res(i).dzdx = res(i).dzdx(1,1,(1:256),:);
     end
     if opts.conserveMemory
       res(i+1).dzdx = [] ;
