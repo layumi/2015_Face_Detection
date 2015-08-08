@@ -34,14 +34,14 @@ IMAGELIB_LDFLAGS ?= $(IMAGELIB_LDFLAGS_DEFAULT)
 
 # Remark: each MATLAB version requires a particular CUDA Toolkit version.
 # Note that multiple CUDA Toolkits can be installed.
-#MATLABROOT ?= /Applications/MATLAB_R2013b.app
-#CUDAROOT ?= /Developer/NVIDIA/CUDA-5.5
 #MATLABROOT ?= /Applications/MATLAB_R2014b.app
 #CUDAROOT ?= /Developer/NVIDIA/CUDA-6.0
+#MATLABROOT ?= /Applications/MATLAB_R2015b.app
+#CUDAROOT ?= /Developer/NVIDIA/CUDA-6.5
 
 # Maintenance
 NAME = matconvnet
-VER = 1.0-beta12
+VER = 1.0-beta13
 DIST = $(NAME)-$(VER)
 RSYNC = rsync
 HOST = vlfeat-admin:sites/sandbox-matconvnet
@@ -141,10 +141,12 @@ cpp_src+=matlab/src/bits/nnfullyconnected.$(ext)
 cpp_src+=matlab/src/bits/nnsubsample.$(ext)
 cpp_src+=matlab/src/bits/nnpooling.$(ext)
 cpp_src+=matlab/src/bits/nnnormalize.$(ext)
+cpp_src+=matlab/src/bits/nnbnorm.$(ext)
 mex_src+=matlab/src/vl_nnconv.$(ext)
 mex_src+=matlab/src/vl_nnconvt.$(ext)
 mex_src+=matlab/src/vl_nnpool.$(ext)
 mex_src+=matlab/src/vl_nnnormalize.$(ext)
+mex_src+=matlab/src/vl_nnbnorm.$(ext)
 ifdef ENABLE_IMREADJPEG
 mex_src+=matlab/src/vl_imreadjpeg.cpp
 endif
@@ -155,6 +157,7 @@ cpp_src+=matlab/src/bits/impl/subsample_cpu.cpp
 cpp_src+=matlab/src/bits/impl/copy_cpu.cpp
 cpp_src+=matlab/src/bits/impl/pooling_cpu.cpp
 cpp_src+=matlab/src/bits/impl/normalize_cpu.cpp
+cpp_src+=matlab/src/bits/impl/bnorm_cpu.cpp
 cpp_src+=matlab/src/bits/impl/tinythread.cpp
 ifdef ENABLE_IMREADJPEG
 cpp_src+=matlab/src/bits/impl/imread_$(IMAGELIB).cpp
@@ -167,6 +170,7 @@ cpp_src+=matlab/src/bits/impl/subsample_gpu.cu
 cpp_src+=matlab/src/bits/impl/copy_gpu.cu
 cpp_src+=matlab/src/bits/impl/pooling_gpu.cu
 cpp_src+=matlab/src/bits/impl/normalize_gpu.cu
+cpp_src+=matlab/src/bits/impl/bnorm_gpu.cu
 cpp_src+=matlab/src/bits/datacu.cu
 ifdef ENABLE_CUDNN
 cpp_src+=matlab/src/bits/impl/nnconv_cudnn.cu

@@ -46,7 +46,7 @@ vlmxOption  options [] = {
   {"NumGroups",        1,   opt_num_groups         },
   {"NoDerData",        0,   opt_no_der_data        },
   {"NoDerFilters",     0,   opt_no_der_filters     },
-  {"NoDerBiases",      0,   opt_no_der_biases      },
+  {"NoderBiases",      0,   opt_no_der_biases      },
   {"CUDNN",            0,   opt_cudnn              },
   {"NoCUDNN",          0,   opt_no_cudnn           },
   {0,                  0,   0                      }
@@ -76,7 +76,7 @@ enum {
 } ;
 
 enum {
-  OUT_RESULT = 0, OUT_DERFILTERS, OUT_DERBIASES, OUT_END
+  OUT_RESULT = 0, OUT_DERFILTERS, OUT_derBiases, OUT_END
 } ;
 
 void mexFunction(int nout, mxArray *out[],
@@ -95,7 +95,7 @@ void mexFunction(int nout, mxArray *out[],
   bool fullyConnectedMode = false ;
   bool computeDerData = true ;
   bool computeDerFilters = true ;
-  bool computeDerBiases = true ;
+  bool computederBiases = true ;
 
   int verbosity = 0 ;
   int opt ;
@@ -181,7 +181,7 @@ void mexFunction(int nout, mxArray *out[],
         break ;
 
       case opt_no_der_biases :
-        computeDerBiases = VL_FALSE ;
+        computederBiases = VL_FALSE ;
         break ;
 
       case opt_no_cudnn :
@@ -240,10 +240,6 @@ void mexFunction(int nout, mxArray *out[],
   if (filtersGeom.getHeight() == 0 || filtersGeom.getWidth() == 0 || filtersGeom.getDepth() == 0) {
     mexErrMsgTxt("A dimension of FILTERS is void.") ;
   }
-  if (data.getHeight() + (cropTop+cropBottom) < filters.getHeight() ||
-      data.getWidth() + (cropLeft+cropRight) < filters.getWidth()) {
-    mexErrMsgTxt("FILTERS are larger than the outoput (including cropding).") ;
-  }
 
   /* grouped filters */
   if (numFilterGroups < 1) {
@@ -261,6 +257,10 @@ void mexFunction(int nout, mxArray *out[],
                                 (data.getWidth()-1)*upsampleX  - (cropLeft+cropRight) + filtersGeom.getWidth(),
                                 filtersGeom.getDepth() * numFilterGroups,
                                 data.getSize()) ;
+
+  if (outputGeom.getHeight() < 1 || outputGeom.getWidth() < 1) {
+    mexErrMsgTxt("The output array is empty due to CROP being too large.") ;
+  }
 
   if (backMode && (derOutput != outputGeom)) {
     mexErrMsgTxt("DEROUTPUT dimensions are incompatible with X and FILTERS.") ;
@@ -289,7 +289,7 @@ void mexFunction(int nout, mxArray *out[],
     if (computeDerFilters) {
       derFilters.init(type, filters.getGeometry()) ;
     }
-    if (computeDerBiases && hasBiases) {
+    if (computederBiases && hasBiases) {
       derBiases.init(type, biases.getGeometry()) ;
     }
   }
@@ -360,7 +360,7 @@ void mexFunction(int nout, mxArray *out[],
   if (backMode) {
     out[OUT_RESULT] = (computeDerData) ? derData.relinquish() : mxCreateDoubleMatrix(0,0,mxREAL) ;
     out[OUT_DERFILTERS] = (computeDerFilters)? derFilters.relinquish() : mxCreateNumericMatrix(0,0,mxSINGLE_CLASS,mxREAL) ;
-    out[OUT_DERBIASES] = (computeDerBiases & hasBiases) ? derBiases.relinquish() : mxCreateNumericMatrix(0,0,mxSINGLE_CLASS,mxREAL) ;
+    out[OUT_derBiases] = (computederBiases & hasBiases) ? derBiases.relinquish() : mxCreateNumericMatrix(0,0,mxSINGLE_CLASS,mxREAL) ;
   } else {
     out[OUT_RESULT] = output.relinquish() ;
   }

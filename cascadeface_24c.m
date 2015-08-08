@@ -5,13 +5,12 @@ setup;
 % -------------------------------------------------------------------------
 
 % Load character dataset
-imdb = load('C:/Users/zhedong/Desktop/face-database/fddb&background_c.mat') ;
+imdb = load('../../aflw/positive_c.mat') ;
 imdb = imdb.imdb;
-imdb.images.data = imdb.images.data24;
-s = size(imdb.images.data24);
-imdb.images.set=ones(s(4),1);%set train&& valiation
-imdb.images.set(round(rand(1,60000)*s(4)))=2;
 imdb.meta.sets=['train','val'];
+ss = size(imdb.images.label);
+imdb.images.set = ones(1,ss(2));
+imdb.images.set(ceil(rand(1,ceil(ss(2)/5))*ss(2))) = 2;
 % -------------------------------------------------------------------------
 % Part 4.2: initialize a CNN architecture
 % -------------------------------------------------------------------------
@@ -22,69 +21,42 @@ net = f24net_c() ;
 % Part 4.3: train and evaluate the CNN
 % -------------------------------------------------------------------------
 
-trainOpts.batchSize = 128 ;
-trainOpts.numEpochs = 20 ;
-trainOpts.continue = true ;
-trainOpts.useGpu = false ;
-trainOpts.learningRate = 0.003 ;
-trainOpts.expDir = 'data/24netc-experiment' ;
-trainOpts = vl_argparse(trainOpts, varargin);
+opts.train.batchSize = 256 ;
+opts.train.numSubBatches = 1 ;
+opts.train.continue = true ;
+opts.train.gpus = 4 ;
+%opts.train.prefetch = true ;
+opts.train.sync = false ;
+opts.train.errorFunction = 'multiclass' ;
+opts.train.expDir = 'data/24net-cc-v1-v1.0-dropout0.5/' ;
+opts.train.learningRate = [0.001*ones(1,23),0.0001*ones(1,10)] ;
+opts.train.numEpochs = numel(opts.train.learningRate) ;
+[opts, varargin] = vl_argparse(opts.train, varargin) ;
 
 % Take the average image out
-imageMean = mean(imdb.images.data(:)) ;
-imdb.images.data = imdb.images.data - imageMean ;
-
-% Convert to a GPU array if needed
-if trainOpts.useGpu
-  imdb.images.data = gpuArray(imdb.images.data) ;
-end
+imageMean = mean(imdb.images.data24(:)) ;
+imdb.images.data24 = imdb.images.data24 - imageMean ;
 
 % Call training function in MatConvNet
-[net,info] = cnn_train(net, imdb, @getBatch, trainOpts) ;
-
-% Move the CNN back to the CPU if it was trained on the GPU
-if trainOpts.useGpu
-  net = vl_simplenn_move(net, 'cpu') ;
-end
+[net,info] = cnn_train(net, imdb, @getBatch, opts) ;
 
 % Save the result for later use
 net.layers(end) = [] ;
 net.imageMean = imageMean ;
-save('data/24netc-experiment/f24net_c.mat', '-struct', 'net') ;
+save(strcat(opts.expDir,'f24netc.mat'), '-struct', 'net') ;
 
 % -------------------------------------------------------------------------
 % Part 4.4: visualize the learned filters
 % -------------------------------------------------------------------------
 
 figure(2) ; clf ; colormap gray ;
-vl_imarraysc(squeeze(net.layers{1}.filters),'spacing',2)
+vl_imarraysc(squeeze(net.layers{1}.weights{1}),'spacing',2)
 axis equal ; title('filters in the first layer') ;
-
-% -------------------------------------------------------------------------
-% Part 4.5: apply the model
-% -------------------------------------------------------------------------
-
-% Load the CNN learned before
-net = load('data/24netc-experiment/f24net_c.mat') ;
-
-% Load the sentence
-im = imread('data/test2.png');
-im = imresize(im,[24 24]);
-im = im2single(im) ;
-im = 256 * (im - net.imageMean) ;
-
-% Apply the CNN to the larger image
-res = vl_simplenn(net, im) ;
-[value,index]=max(res(8).x);
-disp(index);
 
 
 % --------------------------------------------------------------------
 function [im, labels] = getBatch(imdb, batch)
 % --------------------------------------------------------------------
-im = imdb.images.data(:,:,:,batch) ;
+im = imdb.images.data24(:,:,:,batch) ;
 im = 256 * reshape(im, 24, 24, 3, []) ;
 labels = imdb.images.label(1,batch) ;
-
-
-

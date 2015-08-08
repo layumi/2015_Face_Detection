@@ -32,6 +32,7 @@ opts.conserveMemory = false ;
 opts.backPropDepth = +inf ;
 opts.sync = false ;
 opts.prefetch = false ;
+opts.cudnn = true ;
 opts.weightDecay = 0.0005 ;
 opts.momentum = 0.9 ;
 opts.errorFunction = 'multiclass' ;
@@ -130,15 +131,6 @@ for epoch=1:opts.numEpochs
     end
   end
 
-  % move CNN to GPU as needed
-  if numGpus == 1
-    net = vl_simplenn_move(net, 'gpu') ;
-  elseif numGpus > 1
-    spmd(numGpus)
-      net_ = vl_simplenn_move(net, 'gpu') ;
-    end
-  end
-
   % train one epoch and validate
   train = opts.train(randperm(numel(opts.train))) ; % shuffle
   val = opts.val ;
@@ -147,9 +139,10 @@ for epoch=1:opts.numEpochs
     [~,stats.val] = process_epoch(opts, getBatch, epoch, val, 0, imdb, net) ;
   else
     spmd(numGpus)
-      [net_, stats_train_] = process_epoch(opts, getBatch, epoch, train, learningRate, imdb, net_) ;
+      [net_, stats_train_] = process_epoch(opts, getBatch, epoch, train, learningRate, imdb, net) ;
       [~, stats_val_] = process_epoch(opts, getBatch, epoch, val, 0, imdb, net_) ;
     end
+    net = net_{1} ;
     stats.train = sum([stats_train_{:}],2) ;
     stats.val = sum([stats_val_{:}],2) ;
   end
@@ -159,17 +152,9 @@ for epoch=1:opts.numEpochs
   for f = sets
     f = char(f) ;
     n = numel(eval(f)) ;
-    info.(f).speed(epoch) = n / stats.(f)(1) ;
+    info.(f).speed(epoch) = n / stats.(f)(1) * max(1, numGpus) ;
     info.(f).objective(epoch) = stats.(f)(2) / n ;
     info.(f).error(:,epoch) = stats.(f)(3:end) / n ;
-  end
-  if numGpus > 1
-    spmd(numGpus)
-      net_ = vl_simplenn_move(net_, 'cpu') ;
-    end
-    net = net_{1} ;
-  else
-    net = vl_simplenn_move(net, 'cpu') ;
   end
   if ~evaluateMode, save(modelPath(epoch), 'net', 'info') ; end
 
@@ -209,18 +194,40 @@ function err = error_multiclass(opts, labels, res)
 % -------------------------------------------------------------------------
 predictions = gather(res(end-1).x) ;
 [~,predictions] = sort(predictions, 3, 'descend') ;
-error = ~bsxfun(@eq, predictions, reshape(labels, 1, 1, 1, [])) ;
-err(1,1) = sum(sum(sum(error(:,:,1,:)))) ;
-err(2,1) = sum(sum(sum(min(error(:,:,1:5,:),[],3)))) ;
+
+% be resilient to badly formatted labels
+if numel(labels) == size(predictions, 4)
+  labels = reshape(labels,1,1,1,[]) ;
+end
+
+% skip null labels
+mass = single(labels(:,:,1,:) > 0) ;
+if size(labels,3) == 2
+  % if there is a second channel in labels, used it as weights
+  mass = mass .* labels(:,:,2,:) ;
+  labels(:,:,2,:) = [] ;
+end
+
+error = ~bsxfun(@eq, predictions, labels) ;
+err(1,1) = sum(sum(sum(mass .* error(:,:,1,:)))) ;
+err(2,1) = sum(sum(sum(mass .* min(error(:,:,1:5,:),[],3)))) ;
 
 % -------------------------------------------------------------------------
 function err = error_binary(opts, labels, res)
 % -------------------------------------------------------------------------
 predictions = gather(res(end-1).x) ;
-predictions = reshape(predictions,2,[]);
-[~,predictions] = max(predictions);
+[~,predictions] = sort(predictions, 3, 'descend') ;
+
+% be resilient to badly formatted labels
+if numel(labels) == size(predictions, 4)
+  labels = reshape(labels,1,1,1,[]) ;
+end
+
+% skip null labels
+mass = single(labels(:,:,1,:) > 0) ;
+
 error = ~bsxfun(@eq, predictions, labels) ;
-err = sum(error(:)) ;
+err = sum(sum(sum(mass .* error(:,:,1,:)))) ;
 
 % -------------------------------------------------------------------------
 function err = error_none(opts, labels, res)
@@ -228,8 +235,17 @@ function err = error_none(opts, labels, res)
 err = zeros(0,1) ;
 
 % -------------------------------------------------------------------------
-function  [net,stats,prof] = process_epoch(opts, getBatch, epoch, subset, learningRate, imdb, net)
+function  [net_cpu,stats,prof] = process_epoch(opts, getBatch, epoch, subset, learningRate, imdb, net_cpu)
 % -------------------------------------------------------------------------
+
+% move CNN to GPU as needed
+numGpus = numel(opts.gpus) ;
+if numGpus >= 1
+  net = vl_simplenn_move(net_cpu, 'gpu') ;
+else
+  net = net_cpu ;
+  net_cpu = [] ;
+end
 
 % validation mode if learning rate is zero
 training = learningRate > 0 ;
@@ -283,7 +299,8 @@ for t=1:opts.batchSize:numel(subset)
                       'disableDropout', ~training, ...
                       'conserveMemory', opts.conserveMemory, ...
                       'backPropDepth', opts.backPropDepth, ...
-                      'sync', opts.sync) ;
+                      'sync', opts.sync, ...
+                      'cudnn', opts.cudnn) ;
 
     % accumulate training errors
     error = sum([error, [...
@@ -295,7 +312,7 @@ for t=1:opts.batchSize:numel(subset)
   % gather and accumulate gradients across labs
   if training
     if numGpus <= 1
-      net = accumulate_gradients(opts, learningRate, batchSize, net, res) ;
+      [net,res] = accumulate_gradients(opts, learningRate, batchSize, net, res) ;
     else
       if isempty(mmap)
         mmap = map_gradients(opts.memoryMapFile, net, res, numGpus) ;
@@ -331,10 +348,16 @@ if nargout > 2
   mpiprofile off ;
 end
 
+if numGpus >= 1
+  net_cpu = vl_simplenn_move(net, 'cpu') ;
+else
+  net_cpu = net ;
+end
+
 % -------------------------------------------------------------------------
 function [net,res] = accumulate_gradients(opts, lr, batchSize, net, res, mmap)
 % -------------------------------------------------------------------------
-for l=1:numel(net.layers)
+for l=numel(net.layers):-1:1
   for j=1:numel(res(l).dzdw)
     thisDecay = opts.weightDecay * net.layers{l}.weightDecay(j) ;
     thisLR = lr * net.layers{l}.learningRate(j) ;

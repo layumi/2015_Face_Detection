@@ -27,8 +27,8 @@ opts.train.gpus = 3 ;
 %opts.train.prefetch = true ;
 opts.train.sync = false ;
 opts.train.errorFunction = 'binary' ;
-opts.train.expDir = 'data/12netv2-v2.0/' ;
-opts.train.learningRate = [0.001*ones(1,150),0.0001*ones(1,20),0.00001*ones(1,5)] ;
+opts.train.expDir = 'data/12netv2-v2.0-test/' ;
+opts.train.learningRate = [0.001*ones(1,70),0.0001*ones(1,20),0.00001*ones(1,5)] ;
 opts.train.numEpochs = numel(opts.train.learningRate) ;
 [opts, varargin] = vl_argparse(opts.train, varargin) ;
 

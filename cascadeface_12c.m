@@ -28,17 +28,17 @@ opts.train.gpus = 3 ;
 %opts.train.prefetch = true ;
 opts.train.sync = false ;
 opts.train.errorFunction = 'multiclass' ;
-opts.train.expDir = 'data/12net-cc-v1-v1.0/' ;
-opts.train.learningRate = [0.001*ones(1,100),0.0001*ones(1,20),0.00001*ones(1,5)] ;
+opts.train.expDir = 'data/12net-cc-v1-v1.0-dropout0.5-pad2/' ;
+opts.train.learningRate = [0.05*ones(1,25),0.005*ones(1,15),0.0005*ones(1,7)] ;
 opts.train.numEpochs = numel(opts.train.learningRate) ;
 [opts, varargin] = vl_argparse(opts.train, varargin) ;
 
 % Take the average image out
-imageMean = mean(imdb.images.data(:)) ;
-imdb.images.data = imdb.images.data - imageMean ;
+imageMean = mean(imdb.images.data12(:)) ;
+imdb.images.data12 = imdb.images.data12 - imageMean ;
 
 % Call training function in MatConvNet
-[net,info] = cnn_train(net, imdb, @getBatch, trainOpts) ;
+[net,info] = cnn_train(net, imdb, @getBatch, opts) ;
 
 % Save the result for later use
 net.layers(end) = [] ;
@@ -50,26 +50,8 @@ save(strcat(opts.expDir,'f12netc.mat'), '-struct', 'net') ;
 % -------------------------------------------------------------------------
 
 figure(2) ; clf ; colormap gray ;
-vl_imarraysc(squeeze(net.layers{1}.filters),'spacing',2)
+vl_imarraysc(squeeze(net.layers{1}.weights{1}),'spacing',2)
 axis equal ; title('filters in the first layer') ;
-
-% -------------------------------------------------------------------------
-% Part 4.5: apply the model
-% -------------------------------------------------------------------------
-
-% Load the CNN learned before
-net = load('data/12netc-experiment/f12net_c.mat') ;
-
-% Load the sentence
-im = imread('data/test2.png');
-im = imresize(im,[12 12]);
-im = im2single(im) ;
-im = 256 * (im - net.imageMean) ;
-
-% Apply the CNN to the larger image
-res = vl_simplenn(net, im) ;
-[value,index]=max(res(8).x);
-disp(index);
 
 
 % --------------------------------------------------------------------
