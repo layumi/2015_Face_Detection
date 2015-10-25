@@ -1,11 +1,13 @@
 # Cascade CNNs for Face Detection
 The main idea is from 2015 CVPR Cascade CNNs for Face Detection.(L.Hao,Z.Lin etc.)
+In the master branch, I include the code for training. And in the test branch, I include the code for testing.
 
-MatconvNet has been used in this code.(More reference you can find at last.)The trainning data which I used is aflw database(you can download from database website for free after application).So I don't conclude data in this repos.
+#install
+1.Please install matconvernet first. You can get this library easily and visit the [homepage](http://www.vlfeat.org/matconvnet) to konw how to build.
 
-This branch only include the training part. The test part will base on fddb database. It will be upload soon.
-**MatConvNet** is a MATLAB toolbox implementing *Convolutional Neural
-Networks* (CNNs) for computer vision applications. It is simple,
-efficient, and can run and learn state-of-the-art CNNs. Several
-example CNNs are included to classify and encode images. Please visit
-the [homepage](http://www.vlfeat.org/matconvnet) to know more.
+2.After install matconvernet, you should modify simplenn.m in your /<matconvertnet>/matlab/simplenn/simplenn.m.
+Add two layers "custom" and "custom48" like what I write in my simplenn.m which has include in "test" branch.
+Now you can easily start it by running the demo.m without recompile.
+
+
+
