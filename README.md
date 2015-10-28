@@ -9,5 +9,6 @@ In the "master" branch, I include the code for training. And in the "test" branc
 Add two layers "custom" and "custom48" like what I write in my simplenn.m which has include in "test" branch.("master"branch also include simplenn.m but it is out of date.)
 Now you can easily start it by running the demo.m without recompile.
 
+![](https://github.com/layumi/2015_Face_Detection/blob/test/show2.png)
 ![](https://github.com/layumi/2015_Face_Detection/blob/test/discROC-compare.png)
 
