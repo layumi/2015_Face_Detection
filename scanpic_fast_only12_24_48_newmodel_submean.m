@@ -12,11 +12,11 @@ global net48_c;
 origin_im = img;
 bias12 = 0.3;
 bias24 = 0.2;
-bias48 = 0.8;
+bias48 = 0.5;
 
-thres12 = 0.2;
-thres24 = 0.16;
-thres48 = 0.12;
+thres12 = 0.14;
+thres24 = 0.12;
+thres48 = 0.1;
 %calibration ���
 %
 xn = [0.17,0,-0.17]; %0.17
@@ -44,10 +44,10 @@ boxes12=[];
 boxes24=[];
 boxes48=[];
 ttt = 1;
-for k=1:16
+for k=1:8
     ss = (200/min(oh,ow))/ttt;% oh/12<f<oh
     %ss = 12/(20*ttt);
-    ttt =ttt*1.18;
+    ttt =ttt*1.41;
     im = imresize(origin_im,ss);
     [h, w ,c] = size(im);
     im = im2single(im) ;
@@ -200,7 +200,7 @@ for k=1:16
     boxes12 = [win12(:,1),win12(:,2),win12(:,1)+win12(:,3),win12(:,2)+win12(:,3),win12(:,4)];
     
     %-----------------------------nms
-    pick = nms(boxes12,0.85);
+    pick = nms(boxes12,0.9);
     win12 = win12(pick(:),:);
     
     
@@ -282,7 +282,7 @@ for k=1:16
     end
     boxes24 = [win24(:,1),win24(:,2),win24(:,1)+win24(:,3),win24(:,2)+win24(:,3),win24(:,4)];
     
-    pick = nms(boxes24,0.81);
+    pick = nms(boxes24,0.85);
     win24 = win24(pick(:),:);
     
     %-------------------------------48net-----------------------
@@ -298,7 +298,7 @@ for k=1:16
     y2(y2>ow) = ow;
     x1(x1<1) = 1;
     y1(y1<1) = 1;
-    process48_im = origin_im;
+    process48_im = im2single(origin_im);
     im48 = single(zeros(48,48,3,s(1)));
     for i=1:s(1)
         win = process48_im(x1(i):x2(i),y1(i):y2(i),:);
@@ -309,9 +309,7 @@ for k=1:16
     end
     
     %----------------------norm
-    data = im48;
-  data = data/255-net48.imageMean;
-  im48 = data;
+    im48 = im48-net48.imageMean;
     %-----------------------48net------------------
     res48 = vl_simplenn(net48, im48) ;
     X = res48(end).x;
