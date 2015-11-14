@@ -8,15 +8,15 @@ global net24_c;
 global net48;
 global net48_c;
 % Load the sentence
-[oh,ow,oc] = size(img);
+[oh,ow,~] = size(img);
 origin_im = img;
 bias12 = 0.3;
 bias24 = 0.2;
 bias48 = 0.5;
 
-thres12 = 0.14;
-thres24 = 0.12;
-thres48 = 0.1;
+thres12 = 0.2;
+thres24 = 0.16;
+thres48 = 0.12;
 %calibration ���
 %
 xn = [0.17,0,-0.17]; %0.17
@@ -29,6 +29,7 @@ yn = [0,0,0];
 sn = [1,1,1,1,1];
 %}
 chang_count = 1;
+chang = zeros(3,45);
 for m = 1:5 %adverse
     for n = 1:3
         for k = 1:3
@@ -37,7 +38,7 @@ for m = 1:5 %adverse
         end
     end
 end
- boxes=[];
+boxes=[];
 %-------------------12net-------------------
 %disp('12net');
 boxes12=[];
@@ -51,8 +52,8 @@ for k=1:8
     im = imresize(origin_im,ss);
     [h, w ,c] = size(im);
     im = im2single(im) ;
-    im = (im - net12.imageMean) ;
-    cim =  (im - net12_c.imageMean) ;
+    im = bsxfun(@minus, im,net12.imageMean) ;
+    %cim =  (im - net12_c.imageMean) ;
     win12=[];
     win24=[];
     win48=[];
@@ -148,28 +149,42 @@ for k=1:8
     win12= [local;width;value]';
     % win12 = [win12;win12_tmp'];
     %win12 = cat(1,win12,win12_tmp');
-
+    
     %-----------------------------12netc-----------------
     if isempty(win12)
         continue;
     end
     x1 = round(win12(:,1));
     y1 = round(win12(:,2));
-    w = win12(:,3);
-    x2 = round(x1 + w);
-    y2 = round(y1 + w);
-    x2(x2>oh) = oh;
-    y2(y2>ow) = ow;
     x1(x1<1) = 1;
     y1(y1<1) = 1;
+    w = round(win12(:,3));
+    x2 = x1 + w;
+    y2 = y1 + w;
+    x1(x2>oh) = oh-w(1);   %w is one value
+    y1(y2>ow) = ow-w(1);
+    x2(x2>oh) = oh;
+    y2(y2>ow) = ow;
     process12_im = im2single(origin_im) ;
-    process12_im = 256*(process12_im - net12_c.imageMean) ;
+    process12_im = 256*bsxfun(@minus, process12_im , net12_c.imageMean) ;
     s = size(win12);
-    im12 = single(zeros(12,12,3,s(1)));
-    parfor i=1:s(1)
+    %{
+    %--old version
+     im12 = single(zeros(12,12,3,s(1)));
+    parfor i=1:s(1) 
         im12(:,:,:,i) = imresize(process12_im(x1(i):x2(i),y1(i):y2(i),:),[12 12]);
     end
+    %}
     
+    x1_zzd = int32(x1 - 1);
+    x2_zzd = int32(x2 - 1);
+    y1_zzd = int32(y1 - 1);
+    y2_zzd = int32(y2 - 1);
+    w_zzd = int32(w(1)+1);  %w is same
+    %resize_form12 = int32([12,12]);
+    im12_zzd = zzd(process12_im,x1_zzd,x2_zzd,y1_zzd,y2_zzd,w_zzd,w_zzd,s(1));  %return patches by mex code
+    im12_zzd = reshape(im12_zzd,w_zzd,w_zzd,3,s(1));
+    im12 = imresize(im12_zzd,[12 12]);
     res12_c = vl_simplenn(net12_c,im12) ;
     X = res12_c(end).x;
     E = exp(bsxfun(@minus, X, max(X,[],3))) ;
@@ -184,17 +199,16 @@ for k=1:8
             yn = meanx(2);
             sn = meanx(3);
             w = win12(i,3);
-%            win12(i,1) = win12(i,1)-yn*w/sn;
-    %        win12(i,2) = win12(i,2)-xn*w/sn;
-       %     win12(i,3) = w/sn;
-            
-             center_x = win12(i,1)+w/2;
-        center_y = win12(i,2)+w/2;
-        center_x = center_x - yn*w/sn;
-        center_y = center_y - xn*w/sn;
-        win12(i,3) = w/sn;
-        win12(i,1) = center_x - win12(i,3)/2;
-        win12(i,2) = center_y - win12(i,3)/2;
+            %    win12(i,1) = win12(i,1)-yn*w/sn;
+            %    win12(i,2) = win12(i,2)-xn*w/sn;
+            %     win12(i,3) = w/sn;
+            center_x = win12(i,1)+w/2;
+            center_y = win12(i,2)+w/2;
+            center_x = center_x - yn*w/sn;
+            center_y = center_y - xn*w/sn;
+            win12(i,3) = w/sn;
+            win12(i,1) = center_x - win12(i,3)/2;
+            win12(i,2) = center_y - win12(i,3)/2;
         end
     end
     boxes12 = [win12(:,1),win12(:,2),win12(:,1)+win12(:,3),win12(:,2)+win12(:,3),win12(:,4)];
@@ -217,12 +231,14 @@ for k=1:8
     x1(x1<1) = 1;
     y1(y1<1) = 1;
     process24_im = im2single(origin_im) ;
-    process24_im =  (process24_im - net24.imageMean) ;
-    process24_cim = (process24_im - net24_c.imageMean) ;
+    process24_im =  bsxfun(@minus,process24_im,net24.imageMean) ;
+    process24_cim = bsxfun(@minus,process24_im,net24_c.imageMean) ;
     
     im24 = single(zeros(24,24,3,s(1)));
     cim24 = single(zeros(24,24,3,s(1)));
     local24 = single(zeros(2,s(1)));
+    
+    %--old verson
     parfor i=1:s(1)
         wint = process24_im(x1(i):x2(i),y1(i):y2(i),:);
         winc = process24_cim(x1(i):x2(i),y1(i):y2(i),:);
@@ -232,7 +248,18 @@ for k=1:8
         im24(:,:,:,i) = imresize(wint,[24 24]);
         cim24(:,:,:,i) = imresize(winc,[24 24]);
     end
-    
+    %}
+    %{
+    x1_zzd = int32(x1 - 1);
+    x2_zzd = int32(x2 - 1);
+    y1_zzd = int32(y1 - 1);
+    y2_zzd = int32(y2 - 1);
+    %resize_form12 = int32([12,12]);
+    im24_zzd = zzd2(process24_im,x1_zzd,x2_zzd,y1_zzd,y2_zzd,24,24,s(1),[24,24]);
+    cim24_zzd = zzd2(process24_cim,x1_zzd,x2_zzd,y1_zzd,y2_zzd,24,24,s(1),[24,24]);
+    im24 = reshape(im24_zzd,24,24,3,[]);
+    cim24 = reshape(cim24_zzd,24,24,3,[]);
+    %}
     %-----------------------24net------------------
     res24 = vl_simplenn(net24, im24) ;
     X = res24(end).x;
@@ -267,17 +294,17 @@ for k=1:8
             yn = meanx(2);
             sn = meanx(3);
             wi = w(i);
-       %     win24(i,1) = win12(i,1)-yn*wi/sn;
-          %  win24(i,2) = win12(i,2)-xn*wi/sn;
-           % win24(i,3) = wi/sn;
+            %     win24(i,1) = win12(i,1)-yn*wi/sn;
+            %  win24(i,2) = win12(i,2)-xn*wi/sn;
+            % win24(i,3) = wi/sn;
             
-         center_x = win12(i,1)+wi/2;
-        center_y = win12(i,2)+wi/2;
-        center_x = center_x - yn*wi/sn;
-        center_y = center_y - xn*wi/sn;
-        win24(i,3) = wi/sn;
-        win24(i,1) = center_x - win12(i,3)/2;
-        win24(i,2) = center_y - win12(i,3)/2;
+            center_x = win12(i,1)+wi/2;
+            center_y = win12(i,2)+wi/2;
+            center_x = center_x - yn*wi/sn;
+            center_y = center_y - xn*wi/sn;
+            win24(i,3) = wi/sn;
+            win24(i,1) = center_x - win12(i,3)/2;
+            win24(i,2) = center_y - win12(i,3)/2;
         end
     end
     boxes24 = [win24(:,1),win24(:,2),win24(:,1)+win24(:,3),win24(:,2)+win24(:,3),win24(:,4)];
@@ -286,7 +313,9 @@ for k=1:8
     win24 = win24(pick(:),:);
     
     %-------------------------------48net-----------------------
-    
+    if( isempty(win24) )
+            continue;
+    end;
     s = size(win24);
     zzd_24 = zzd_24+s(1);
     x1 = round(win24(:,1));
@@ -300,16 +329,12 @@ for k=1:8
     y1(y1<1) = 1;
     process48_im = im2single(origin_im);
     im48 = single(zeros(48,48,3,s(1)));
-    for i=1:s(1)
-        win = process48_im(x1(i):x2(i),y1(i):y2(i),:);
-        if( isempty(win) )
-            continue;
-        end;
-        im48(:,:,:,i) = imresize(win,[48 48]);
+    parfor i=1:s(1)
+        im48(:,:,:,i) = imresize(process48_im(x1(i):x2(i),y1(i):y2(i),:),[48 48]);
     end
     
     %----------------------norm
-    im48 = im48-net48.imageMean;
+    im48 = bsxfun(@minus,im48,net48.imageMean);
     %-----------------------48net------------------
     res48 = vl_simplenn(net48, im48) ;
     X = res48(end).x;
@@ -317,14 +342,14 @@ for k=1:8
     L = sum(E,3) ;
     Y = bsxfun(@rdivide, E, L) ;
     res48_last = reshape(Y,2,[]);
-   %  X = reshape(X,2,[]);
+    %  X = reshape(X,2,[]);
     chosen = res48_last(1,:) > bias48;
     value = res48_last(1,:);
-  % chosen = X(1,:)>300; 
-   % value = X(1,:);
+    % chosen = X(1,:)>300;
+    % value = X(1,:);
     value = value(chosen);
-    w = w(chosen);
-    w = w';
+    %w = w(chosen);
+    %w = w';
     win24 = win24(chosen,:);
     boxes48_temp = [win24(:,1),win24(:,2),win24(:,1)+win24(:,3),win24(:,2)+win24(:,3),value'];
     if(~isempty(boxes48_temp))
@@ -338,7 +363,7 @@ if isempty(boxes48)
     return;
 end
 
-fprintf('after24:%d\n',zzd_24);
+%fprintf('after24:%d\n',zzd_24);
 %--------------------global nms------------
 
 pick = nms(boxes48,0.4);
@@ -359,23 +384,19 @@ x1(x1<1) = 1;
 y1(y1<1) = 1;
 process48_cim = im2single(origin_im);
 cim48 = single(zeros(48,48,3,s(1)));
-for i=1:s(1)
-    winc = process48_cim(round(x1(i)):round(x2(i)),round(y1(i)):round(y2(i)),:);
-    if( isempty(win) )
-        continue;
-    end;
-    cim48(:,:,:,i) = imresize(winc,[48 48]);
+parfor i=1:s(1)
+    cim48(:,:,:,i) = imresize(process48_cim(round(x1(i)):round(x2(i)),round(y1(i)):round(y2(i)),:),[48 48]);
 end
-    %----------------------norm
-   data2 = cim48;
-  data2 = data2-net48_c.imageMean;
-  cim48 = data2;
+%----------------------norm
+data2 = cim48;
+data2 = data2-net48_c.imageMean;
+cim48 = data2;
 
 res48c = vl_simplenn(net48_c, cim48) ;
-  X = res48c(end).x;
-  E = exp(bsxfun(@minus, X, max(X,[],3))) ;
-  L = sum(E,3) ;
-  Y = bsxfun(@rdivide, E, L) ;
+X = res48c(end).x;
+E = exp(bsxfun(@minus, X, max(X,[],3))) ;
+L = sum(E,3) ;
+Y = bsxfun(@rdivide, E, L) ;
 res48c_last = reshape(Y,45,[]);
 
 win48(:,1) = boxes48(:,1);
@@ -417,7 +438,7 @@ else
     y2 = round(y1 + w);
     %x2(x2>oh) = oh;
     %y2(y2>ow) = ow;
-   % x1(x1<1) = 1;
+    % x1(x1<1) = 1;
     %y1(y1<1) = 1;
     boxes = [x1,y1/tt,x2,y2/tt,win48(:,end)];
     %{
