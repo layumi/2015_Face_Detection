@@ -8,16 +8,17 @@ In the "master" branch, I include the code for training. And in the "test" branc
 2.After install matconvnet, just decompress the whole "test" branch files into the matconvnet folder.
 
 3.Then modify simplenn.m in your matconvertnet/matlab/simplenn/simplenn.m.
-Add two layers "custom" and "custom48" like what I write in my simplenn.m which has include in "test" branch.("master"branch also include simplenn.m but it is out of date.)
+Add two layers "custom" and "custom48" like what I write in my simplenn.m which has been included in "test" branch.("master"branch also include simplenn.m but it is out of date.)
 --note that you can alternatively replace it directly by my simplenn.m but I am not sure whether it is still compatible with the newest version of matconvnet.(because matconvnet updates quickly)
 
-4.Now make sure you have compiled the matconvnet. Then you can easily start it by running the demo.m without recompile.
+4.I wrote mex file to speed up the code. So then you may type 'mex zzd.c' to compile the c file I included as well. 
+5.Then you can easily start it by running the demo.m. And add the pic which you like in the picture folder.
 --If you have any questions, you could write an e-mail or open an issue to get contact with me. You are welcome.
 
 #About Result
 1.Speed: In fddb test, I use 16 different scales(scale factor:1.18) to resize the input so it's considerably slow. In real environment, you can change it to 8 different scales(scale factor:1.41) to speed up.(I have already make this change in the demo progamme) But unfortunately the speed is still about 3 or 4 seconds for a large pic. As far as I consider, the "for" in matlab might be the problem, I still wonder how to solve it.(Although I have used heatmap skill in the 12net and multi-thread tech) The advice is welcome.
 
-Tips: In the newest version, I add zzd.c which is a c file to get pic patches. By avoid using matlab "for", it saves 50% time and have a better effieciency.  I have include mex executable file, but you may recompile it for your environment by "mex zzd.c". 
+Tips: In the newest version, I add zzd.c which is a c file to get pic patches. By avoid using matlab "for", it saves 50% time and have a better effieciency.  I have included mex executable file, but it is better to recompile it for your own environment by "mex zzd.c". 
 
 2.Accuracy: The following picture is produced by 16 different scales input. The third pic is produced on fddb face detection test.
 
