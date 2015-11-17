@@ -16,7 +16,7 @@ net12 = load('12net-newborn/f12net.mat') ;
 net12_c = load('12net-cc-v1/f12net_c.mat') ;
 net24 = load('24net-newborn/f24net-cpu.mat') ;
 net24_c = load('24net-cc-v1-no256/f24netc.mat') ;
-net48 = load('48net-6hard/f48net-cpu.mat') ;
+net48 = load('48net-6hard-2/f48net-cpu.mat') ;
 net48_c = load('48net-cc-cifar-v2-submean/f48netc.mat') ;
 for i=1:length(subdir)
     if( isequal( subdir( i ).name, '.' ) || ...
@@ -34,12 +34,13 @@ for i=1:length(subdir)
        end
        boxes = [];
        imshow(img);
-       tic;
+       tic;  % check time
+       pad = 10;
        for tt=1:1
-          I = img;
-          tform = affine2d([tt 0 0; 0 1 0; 0 0 1]);
-          J = imwarp(I,tform);
-          boxes_temp = scanpic_fast_only12_24_48_newmodel_submean(J,tt);   %%
+          [hh,ww,~]=size(img);
+          I = uint8(zeros(hh+pad*2,ww+pad*2,3));
+          I (pad:hh+pad-1,pad:ww+pad-1,:) = img;
+          boxes_temp = scanpic_fast_only12_24_48_newmodel_submean_demo(I,tt);   %%
           boxes = [boxes;boxes_temp];
        end
        toc;
@@ -50,8 +51,8 @@ for i=1:length(subdir)
          y2 = boxes(:,4);
          boxes_size = size(boxes);
          for xx = 1:boxes_size(1)
-           rectangle('Position',[y1(xx),x1(xx),(y2(xx)-y1(xx)),x2(xx)-x1(xx)],'LineWidth',2,'EdgeColor','b');
-            text(y1(xx),x1(xx),num2str(boxes(xx,5)),'BackgroundColor','b','Color','w');
+           rectangle('Position',[y1(xx)-pad,x1(xx)-pad,(y2(xx)-y1(xx)),x2(xx)-x1(xx)],'LineWidth',2,'EdgeColor','b');
+            text(y1(xx)-pad,x1(xx)-pad,num2str(boxes(xx,5)),'BackgroundColor','b','Color','w');
          end
          pause
        end 
