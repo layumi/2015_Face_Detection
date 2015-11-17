@@ -17,6 +17,8 @@ Add two layers "custom" and "custom48" like what I write in my simplenn.m which 
 #About Result
 1.Speed: In fddb test, I use 16 different scales(scale factor:1.18) to resize the input so it's considerably slow. In real environment, you can change it to 8 different scales(scale factor:1.41) to speed up.(I have already make this change in the demo progamme) But unfortunately the speed is still about 3 or 4 seconds for a large pic. As far as I consider, the "for" in matlab might be the problem, I still wonder how to solve it.(Although I have used heatmap skill in the 12net and multi-thread tech) The advice is welcome.
 
+Tips: In the newest version, I add zzd.c which is a c file to get pic patches. By avoid using matlab "for", it saves 50% time and have a better effieciency.  I have include mex executable file, but you may recompile it for your environment by "mex zzd.c". 
+
 2.Accuracy: The following picture is produced by 16 different scales input. The third pic is produced on fddb face detection test.
 
 ![](https://github.com/layumi/2015_Face_Detection/blob/test/test/p1597154992.jpg)
