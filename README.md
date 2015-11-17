@@ -12,7 +12,9 @@ Add two layers "custom" and "custom48" like what I write in my simplenn.m which 
 --note that you can alternatively replace it directly by my simplenn.m but I am not sure whether it is still compatible with the newest version of matconvnet.(because matconvnet updates quickly)
 
 4.I wrote mex file to speed up the code. So then you may type 'mex zzd.c' to compile the c file I included as well. 
+
 5.Then you can easily start it by running the demo.m. And add the pic which you like in the picture folder.
+
 --If you have any questions, you could write an e-mail or open an issue to get contact with me. You are welcome.
 
 #About Result
