@@ -1,7 +1,10 @@
 # Cascade CNNs for Face Detection
 The main idea is from 2015 CVPR Cascade CNNs for Face Detection.(L.Hao,Z.Lin etc.)
 In the "master" branch, I include the code for training. And in the "test" branch, I include the code for testing.(https://github.com/layumi/2015_Face_Detection/tree/test) 
-What's New: I upload a short technical report in chinese. 
+
+What's New: I upload a short technical report in chinese. (https://github.com/layumi/2015_Face_Detection/blob/master/Short_Technical_Report_in_Chinese.pdf)
+
+What's New: visualize net by https://github.com/layumi/visualize_matconvnet (Now only for f12net f12cnet)
 
 #Install
 1.Please install matconvernet first. You can get this library easily and visit the [homepage](http://www.vlfeat.org/matconvnet) to konw how to build.
