@@ -6,6 +6,9 @@ What's New: I upload a short technical report in chinese. (https://github.com/la
 
 What's New: visualize net by https://github.com/layumi/visualize_matconvnet (Now only for f12net f12cnet)
 
+What's New: visualize face and no-face feature (extracted from 48net) with unsupervised classcifier.
+![](https://github.com/layumi/bhtsne/blob/master/face.jpg)
+
 #Install
 1.Please install matconvernet first. You can get this library easily and visit the [homepage](http://www.vlfeat.org/matconvnet) to konw how to build.
 
