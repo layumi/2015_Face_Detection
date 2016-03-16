@@ -29,7 +29,7 @@ Add two layers "custom" and "custom48" like what I write in my simplenn.m which 
 
 Tips: In the newest version, I add zzd.c which is a c file to get pic patches. By avoid using matlab "for", it saves 50% time and have a better effieciency.  I have included mex executable file, but it is better to recompile it for your own environment by "mex zzd.c". 
 
-2.Accuracy: The following picture is produced by 16 different scales input. The third pic is produced on fddb face detection test.
+2.Accuracy: The following picture is produced by 16 different scales input. The third pic is produced on fddb face detection test.(As the original paper said, I enlarge the bounding boxes by y1 = y1-(y2-y1)*0.4 while testing in fddb)
 
 ![](https://github.com/layumi/2015_Face_Detection/blob/test/test/p1597154992.jpg)
 ![](https://github.com/layumi/2015_Face_Detection/blob/test/show2.png)
