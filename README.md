@@ -4,7 +4,7 @@ In the "master" branch, I include the code for training. And in the "test" branc
 
 What's New: I upload a short technical report in chinese. (https://github.com/layumi/2015_Face_Detection/blob/master/Short_Technical_Report_in_Chinese.pdf)
 
-What's New: visualize net by https://github.com/layumi/visualize_matconvnet (Now only for f12net f12cnet)
+What's New: visualize net by https://github.com/layumi/visualize_face_detection_net/tree/master (Now for all net!)
 
 What's New: visualize face and no-face data by feature cluster(extracted from 48net) with (https://github.com/layumi/bhtsne).
 ![](https://github.com/layumi/bhtsne/blob/master/face.jpg)
