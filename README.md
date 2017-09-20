@@ -9,7 +9,7 @@ What's New: visualize net by https://github.com/layumi/visualize_face_detection_
 What's New: visualize face and no-face data by feature cluster(extracted from 48net) with (https://github.com/layumi/bhtsne).
 ![](https://github.com/layumi/bhtsne/blob/master/face.jpg)
 
-#Install
+# Install
 1.Please install matconvernet first. You can get this library easily and visit the [homepage](http://www.vlfeat.org/matconvnet) to konw how to build.
 
 2.After install matconvnet, just decompress the whole "test" branch files into the matconvnet folder.
@@ -24,7 +24,7 @@ Add two layers "custom" and "custom48" like what I write in my simplenn.m which 
 
 --If you have any questions, you could write an e-mail or open an issue to get contact with me. You are welcome.
 
-#About Result
+# About Result
 1.Speed: In fddb test, I use 16 different scales(scale factor:1.18) to resize the input so it's considerably slow. In real environment, you can change it to 8 different scales(scale factor:1.41) to speed up.(I have already make this change in the demo progamme) But unfortunately the speed is still about 3 or 4 seconds for a large pic. As far as I consider, the "for" in matlab might be the problem, I still wonder how to solve it.(Although I have used heatmap skill in the 12net and multi-thread tech) The advice is welcome.
 
 Tips: In the newest version, I add zzd.c which is a c file to get pic patches. By avoid using matlab "for", it saves 50% time and have a better effieciency.  I have included mex executable file, but it is better to recompile it for your own environment by "mex zzd.c". 
