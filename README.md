@@ -35,3 +35,12 @@ Tips: In the newest version, I add zzd.c which is a c file to get pic patches. B
 ![](https://github.com/layumi/2015_Face_Detection/blob/test/show2.png)
 ![](https://github.com/layumi/2015_Face_Detection/blob/test/discROC-compare.png)
 
+
+# Citation
+We greatly appreciate it if you can cite the website in your publications:
+```
+@misc{2015_Face_Detection,
+  title = {{2015_Face_Detection}},
+  howpublished = "\url{https://github.com/layumi/2015_Face_Detection}",
+}
+```
